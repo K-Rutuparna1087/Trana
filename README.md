@@ -95,6 +95,6 @@ It is a scalable emergency operating system designed to make cities:
 ✔ Community-powered  
 
 
-View your app in AI Studio: https://ai.studio/apps/c7dd2069-86b1-41f4-bbc8-00d2606d67ef
+View your app in AI Studio: [https://ai.studio/apps/c7dd2069-86b1-41f4-bbc8-00d2606d67ef](https://ais-dev-2hiyv3tjjd4ezhblvrelsu-52376043298.asia-southeast1.run.app/)
 
 
