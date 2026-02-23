@@ -70,62 +70,89 @@ interface Incident {
 }
 
 // Components
-const Navbar = ({ user, onLogout, onToggleSidebar }: { user: User | null, onLogout: () => void, onToggleSidebar: () => void }) => {
-  const [lang, setLang] = useState('English');
-  const languages = ['English', 'Tamil', 'Hindi', 'Marathi', 'Kannada', 'Telugu', 'Malayalam'];
+const Navbar = ({
+  user,
+  onLogout,
+  onToggleSidebar,
+  language,
+  setLanguage
+}: {
+  user: User | null,
+  onLogout: () => void,
+  onToggleSidebar: () => void,
+  language: string,
+  setLanguage: (lang: string) => void
+}) => {
+
+  const languages = [
+    { code: 'en', label: 'English' },
+    { code: 'ta', label: 'Tamil' },
+    { code: 'hi', label: 'Hindi' },
+    { code: 'mr', label: 'Marathi' },
+    { code: 'kn', label: 'Kannada' },
+    { code: 'te', label: 'Telugu' },
+    { code: 'ml', label: 'Malayalam' },
+  ];
 
   return (
     <nav className="fixed top-0 left-0 right-0 h-20 bg-white/95 backdrop-blur-xl border-b border-zinc-200 z-[100] flex items-center justify-between px-6 shadow-sm">
+
       <div className="flex items-center gap-3">
         <button onClick={onToggleSidebar} className="p-2 hover:bg-zinc-100 rounded-lg lg:hidden">
           <Menu className="w-6 h-6 text-zinc-900" />
         </button>
+
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center shadow-lg shadow-emerald-500/20">
+          <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center">
             <Shield className="w-5 h-5 text-white fill-white" />
           </div>
           <span className="text-xl font-bold tracking-tighter text-zinc-900">TRANA</span>
         </div>
       </div>
-      
+
       <div className="flex items-center gap-4">
+
+        {/* LANGUAGE DROPDOWN */}
         <div className="relative group hidden md:block">
-          <button className="flex items-center gap-2 px-3 py-1.5 bg-zinc-100 rounded-xl border border-zinc-200 text-xs font-bold text-zinc-600 hover:bg-zinc-200 transition-all">
+          <button className="flex items-center gap-2 px-3 py-1.5 bg-zinc-100 rounded-xl border border-zinc-200 text-xs font-bold text-zinc-600">
             <Globe className="w-3.5 h-3.5" />
-            {lang}
+            {languages.find(l => l.code === language)?.label}
           </button>
+
           <div className="absolute top-full right-0 mt-2 w-40 bg-white rounded-2xl border border-zinc-200 shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all p-2">
             {languages.map(l => (
-              <button 
-                key={l} 
-                onClick={() => setLang(l)}
-                className="w-full text-left px-3 py-2 text-xs font-medium text-zinc-600 hover:bg-zinc-50 hover:text-emerald-600 rounded-lg transition-colors"
+              <button
+                key={l.code}
+                onClick={() => setLanguage(l.code)}
+                className="w-full text-left px-3 py-2 text-xs hover:bg-zinc-50 rounded-lg"
               >
-                {l}
+                {l.label}
               </button>
             ))}
           </div>
         </div>
 
         {user && (
-          <div className="hidden sm:flex items-center gap-2 px-3 py-1 bg-zinc-100 rounded-full border border-zinc-200">
+          <div className="hidden sm:flex items-center gap-2 px-3 py-1 bg-zinc-100 rounded-full border">
             <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-            <span className="text-xs font-medium text-zinc-600 capitalize">{user.role}</span>
+            <span className="text-xs capitalize">{user.role}</span>
           </div>
         )}
+
         <button className="p-2 hover:bg-zinc-100 rounded-full relative">
           <Bell className="w-5 h-5 text-zinc-500" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-emerald-500 rounded-full border-2 border-white" />
         </button>
+
         {user ? (
-          <button onClick={onLogout} className="text-sm font-medium text-zinc-500 hover:text-zinc-900 transition-colors">
+          <button onClick={onLogout} className="text-sm text-zinc-500 hover:text-zinc-900">
             Sign Out
           </button>
         ) : (
-          <button className="text-sm font-medium text-white bg-emerald-500 px-4 py-2 rounded-lg hover:bg-emerald-600 transition-colors shadow-lg shadow-emerald-500/20">
+          <button className="text-sm text-white bg-emerald-500 px-4 py-2 rounded-lg">
             Login
           </button>
         )}
+
       </div>
     </nav>
   );
@@ -992,6 +1019,7 @@ const AuthPage = ({ onAuth }: { onAuth: (u: User, token: string) => void }) => {
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const [language, setLanguage] = useState('English');
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [incidents, setIncidents] = useState<Incident[]>([]);
@@ -1127,7 +1155,8 @@ export default function App() {
           lat: pos.coords.latitude,
           lng: pos.coords.longitude,
           reporterId: user?.id,
-          severity: 'critical'
+          severity: 'critical',
+          language: language
         })
       });
       if (res.ok) {
@@ -1186,14 +1215,24 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#F5F5F7] text-zinc-900 selection:bg-emerald-500/30">
-      <Navbar user={user} onLogout={handleLogout} onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
-      
-      <Sidebar 
-        isOpen={isSidebarOpen} 
-        activeTab={activeTab} 
-        setActiveTab={(t) => { setActiveTab(t); setIsSidebarOpen(false); }} 
-        role={user.role} 
+      <Navbar
+        user={user}
+        onLogout={handleLogout}
+        onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+        language={language}
+        setLanguage={setLanguage}
       />
+
+
+       <Sidebar
+         isOpen={isSidebarOpen}
+         activeTab={activeTab}
+         setActiveTab={(t) => {
+         setActiveTab(t);
+         setIsSidebarOpen(false);
+         }}
+         role={user.role}
+       />
 
       <main className="lg:ml-64 pt-40 p-8 lg:p-12 min-h-screen">
         <AnimatePresence mode="wait">

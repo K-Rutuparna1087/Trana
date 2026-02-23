@@ -296,7 +296,7 @@ async function startServer() {
     
     broadcastToResponders({
       type: 'new_incident',
-      incident: { id: incidentId, type, lat, lng, severity, status: 'triggered', created_at: new Date().toISOString() }
+      incident: { id: incidentId, type, lat, lng, severity,language: language || 'en',status: 'triggered', created_at: new Date().toISOString() }
     });
     broadcastStats();
 
