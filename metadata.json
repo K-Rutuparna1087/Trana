@@ -1,0 +1,7 @@
+{
+  "name": "TRANA - City-Scale Emergency Response OS",
+  "description": "An intelligent city-scale emergency response operating system featuring real-time SOS, responder dispatch, SafeWalk, and predictive risk intelligence.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
