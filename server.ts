@@ -288,7 +288,7 @@ async function startServer() {
   };
 
   app.post('/api/incidents', (req, res) => {
-    const { type, lat, lng, reporterId, severity } = req.body;
+    const { type, lat, lng, reporterId, severity , language } = req.body;
     const result = db.prepare('INSERT INTO incidents (type, lat, lng, reporter_id, severity) VALUES (?, ?, ?, ?, ?)')
       .run(type, lat, lng, reporterId, severity);
     
