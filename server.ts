@@ -66,22 +66,22 @@ db.exec(`
   );
 `);
 
-// Seed Data
-const seedUsers = [
-  { name: 'Command Center', email: 'admin@trana.org', password: 'password123', role: 'admin' },
-  { name: 'Dr. Sarah Chen', email: 'sarah@trana.org', password: 'password123', role: 'doctor' },
-  { name: 'Officer Mike Ross', email: 'mike@trana.org', password: 'password123', role: 'police' },
-  { name: 'Jane Civilian', email: 'jane@trana.org', password: 'password123', role: 'civilian' },
-];
+  // Seed Data
+  const seedUsers = [
+    { name: 'Command Center', email: 'admin@trana.org', password: 'password123', role: 'admin' },
+    { name: 'Dr. Sarah Chen', email: 'sarah@trana.org', password: 'password123', role: 'doctor' },
+    { name: 'Officer Mike Ross', email: 'mike@trana.org', password: 'password123', role: 'police' },
+    { name: 'Jane Civilian', email: 'jane@trana.org', password: 'password123', role: 'civilian' },
+  ];
 
-seedUsers.forEach(async (u) => {
-  const exists = db.prepare('SELECT id FROM users WHERE email = ?').get(u.email);
-  if (!exists) {
-    const hashedPassword = await bcrypt.hash(u.password, 10);
-    db.prepare('INSERT INTO users (name, email, password, role, verified) VALUES (?, ?, ?, ?, 1)')
-      .run(u.name, u.email, hashedPassword, u.role);
+  for (const u of seedUsers) {
+    const exists = db.prepare('SELECT id FROM users WHERE email = ?').get(u.email);
+    if (!exists) {
+      const hashedPassword = await bcrypt.hash(u.password, 10);
+      db.prepare('INSERT INTO users (name, email, password, role, verified) VALUES (?, ?, ?, ?, 1)')
+        .run(u.name, u.email, hashedPassword, u.role);
+    }
   }
-});
 
 
 async function startServer() {
@@ -178,11 +178,11 @@ async function startServer() {
   app.get('/api/auth/url', (req, res) => {
     const protocol = req.headers['x-forwarded-proto'] || 'http';
     const host = req.headers.host;
-    const redirectUri = `${protocol}://${host}/auth/callback`;
+    const baseUrl = `${protocol}://${host}`;
+    const redirectUri = `${baseUrl}/auth/callback`;
     
-    // Mock OAuth URL - in a real app, this would be Google/GitHub/etc.
-    // For this demo, we'll redirect to a simple page that simulates the provider
-    const authUrl = `/auth/mock-provider?redirect_uri=${encodeURIComponent(redirectUri)}`;
+    // Mock OAuth URL
+    const authUrl = `${baseUrl}/auth/mock-provider?redirect_uri=${encodeURIComponent(redirectUri)}`;
     res.json({ url: authUrl });
   });
 
@@ -269,7 +269,8 @@ async function startServer() {
   const broadcastStats = () => {
     const totalIncidents = db.prepare('SELECT COUNT(*) as count FROM incidents').get() as any;
     const activeResponders = db.prepare("SELECT COUNT(*) as count FROM users WHERE role IN ('doctor', 'police', 'volunteer') AND status = 'active'").get() as any;
-    const resolvedToday = db.prepare("SELECT COUNT(*) as count FROM incidents WHERE status = 'resolved' AND date(updated_at) = date('now')").get() as any;
+    // Use IST (UTC+5:30) for today's count
+    const resolvedToday = db.prepare("SELECT COUNT(*) as count FROM incidents WHERE status = 'resolved' AND date(updated_at, '+5 hours', '30 minutes') = date('now', '+5 hours', '30 minutes')").get() as any;
     
     const stats = {
       totalIncidents: totalIncidents.count,
@@ -331,6 +332,22 @@ async function startServer() {
     res.json({ status: 'ok' });
   });
 
+  app.post('/api/incidents/:id/resolve', (req, res) => {
+    const { id } = req.params;
+    db.prepare("UPDATE incidents SET status = 'resolved', updated_at = CURRENT_TIMESTAMP WHERE id = ?")
+      .run(id);
+    
+    const incident = db.prepare('SELECT * FROM incidents WHERE id = ?').get(id) as any;
+    
+    broadcastToResponders({
+      type: 'incident_updated',
+      incident
+    });
+    broadcastStats();
+
+    res.json({ status: 'ok' });
+  });
+
   app.post('/api/safewalk/start', (req, res) => {
     const { userId, startLat, startLng, endLat, endLng, interval } = req.body;
     const result = db.prepare('INSERT INTO safe_walks (user_id, start_lat, start_lng, end_lat, end_lng, check_in_interval) VALUES (?, ?, ?, ?, ?, ?)')
@@ -346,7 +363,8 @@ async function startServer() {
   app.get('/api/stats/summary', (req, res) => {
     const totalIncidents = db.prepare('SELECT COUNT(*) as count FROM incidents').get() as any;
     const activeResponders = db.prepare("SELECT COUNT(*) as count FROM users WHERE role IN ('doctor', 'police', 'volunteer') AND status = 'active'").get() as any;
-    const resolvedToday = db.prepare("SELECT COUNT(*) as count FROM incidents WHERE status = 'resolved' AND date(updated_at) = date('now')").get() as any;
+    // Use IST (UTC+5:30) for today's count
+    const resolvedToday = db.prepare("SELECT COUNT(*) as count FROM incidents WHERE status = 'resolved' AND date(updated_at, '+5 hours', '30 minutes') = date('now', '+5 hours', '30 minutes')").get() as any;
     
     res.json({
       totalIncidents: totalIncidents.count,

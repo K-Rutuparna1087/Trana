@@ -304,6 +304,37 @@ const SOSButton = ({ onTrigger }: { onTrigger: (type: string) => void }) => {
   );
 };
 
+// Static Icons to prevent re-creation errors
+const HOSPITAL_ICON = L.divIcon({
+  html: `<div class="w-8 h-8 bg-red-500 rounded-lg flex items-center justify-center shadow-lg border-2 border-white"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6v12"/><path d="M6 12h12"/></svg></div>`,
+  className: '',
+  iconSize: [32, 32],
+});
+
+const BUS_ICON = L.divIcon({
+  html: `<div class="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center shadow-lg border-2 border-white"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6v6"/><path d="M15 6v6"/><path d="M2 12h20"/><path d="M2 18h20"/><path d="M5 22h14"/></svg></div>`,
+  className: '',
+  iconSize: [24, 24],
+});
+
+const RESPONDER_ICONS: Record<string, L.DivIcon> = {
+  police: L.divIcon({
+    html: `<div class="w-8 h-8 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-xl border-2 border-white animate-pulse"><div class="w-2 h-2 bg-white rounded-full"></div></div>`,
+    className: '',
+    iconSize: [32, 32],
+  }),
+  doctor: L.divIcon({
+    html: `<div class="w-8 h-8 bg-emerald-500 rounded-2xl flex items-center justify-center shadow-xl border-2 border-white animate-pulse"><div class="w-2 h-2 bg-white rounded-full"></div></div>`,
+    className: '',
+    iconSize: [32, 32],
+  }),
+  volunteer: L.divIcon({
+    html: `<div class="w-8 h-8 bg-amber-500 rounded-2xl flex items-center justify-center shadow-xl border-2 border-white animate-pulse"><div class="w-2 h-2 bg-white rounded-full"></div></div>`,
+    className: '',
+    iconSize: [32, 32],
+  }),
+};
+
 const CrisisMap = ({ incidents, responderLocations }: { incidents: Incident[], responderLocations: Record<number, { lat: number, lng: number }> }) => {
   const [location, setLocation] = useState<[number, number]>([51.505, -0.09]);
   const [showHeatmap, setShowHeatmap] = useState(false);
@@ -365,31 +396,6 @@ const CrisisMap = ({ incidents, responderLocations }: { incidents: Incident[], r
     }, { enableHighAccuracy: true });
   }, []);
 
-  const hospitalIcon = React.useMemo(() => L.divIcon({
-    html: `<div class="w-8 h-8 bg-red-500 rounded-lg flex items-center justify-center shadow-lg border-2 border-white"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6v12"/><path d="M6 12h12"/></svg></div>`,
-    className: '',
-    iconSize: [32, 32],
-  }), []);
-
-  const busIcon = React.useMemo(() => L.divIcon({
-    html: `<div class="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center shadow-lg border-2 border-white"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6v6"/><path d="M15 6v6"/><path d="M2 12h20"/><path d="M2 18h20"/><path d="M5 22h14"/></svg></div>`,
-    className: '',
-    iconSize: [24, 24],
-  }), []);
-
-  const getResponderIcon = React.useCallback((role: string) => L.divIcon({
-    html: `<div class="w-8 h-8 ${role === 'police' ? 'bg-indigo-600' : role === 'doctor' ? 'bg-emerald-500' : 'bg-amber-500'} rounded-2xl flex items-center justify-center shadow-xl border-2 border-white animate-pulse">
-      <div class="w-2 h-2 bg-white rounded-full"></div>
-    </div>`,
-    className: '',
-    iconSize: [32, 32],
-  }), []);
-
-  // Memoize icons for local responders to avoid re-creating them on every render
-  const localResponderIcons = React.useMemo(() => {
-    return localResponders.map(r => getResponderIcon(r.role));
-  }, [localResponders, getResponderIcon]);
-
   return (
     <div className="h-full w-full rounded-[2.5rem] overflow-hidden border border-zinc-200 relative shadow-2xl shadow-black/5">
       <MapContainer 
@@ -412,19 +418,19 @@ const CrisisMap = ({ incidents, responderLocations }: { incidents: Incident[], r
         </Marker>
 
         {showHospitals && hospitals.map(h => (
-          <Marker key={`hosp-${h.id}`} position={[h.lat, h.lng]} icon={hospitalIcon}>
+          <Marker key={`hosp-${h.id}`} position={[h.lat, h.lng]} icon={HOSPITAL_ICON}>
             <Popup><span className="font-bold">{h.name}</span></Popup>
           </Marker>
         ))}
 
         {showBusStops && busStops.map(b => (
-          <Marker key={`bus-${b.id}`} position={[b.lat, b.lng]} icon={busIcon}>
+          <Marker key={`bus-${b.id}`} position={[b.lat, b.lng]} icon={BUS_ICON}>
             <Popup><span className="font-bold">{b.name}</span></Popup>
           </Marker>
         ))}
 
-        {localResponders.map((r, idx) => (
-          <Marker key={`local-res-${r.id}`} position={[r.lat, r.lng]} icon={localResponderIcons[idx]}>
+        {localResponders.map((r) => (
+          <Marker key={`local-res-${r.id}`} position={[r.lat, r.lng]} icon={RESPONDER_ICONS[r.role] || RESPONDER_ICONS.volunteer}>
             <Popup>
               <div className="p-1">
                 <p className="font-bold capitalize text-zinc-900">{r.role} Responder</p>
@@ -636,7 +642,11 @@ const Dashboard = ({ user, stats, onViewAll }: { user: User, stats: any, onViewA
                 { name: 'Fire Department', phone: '101', icon: Zap },
                 { name: 'Women Helpline', phone: '1091', icon: Info },
               ].map((contact) => (
-                <button key={contact.name} className="w-full flex items-center justify-between p-4 bg-zinc-50 rounded-2xl hover:bg-zinc-100 transition-colors group">
+                <a 
+                  key={contact.name} 
+                  href={`tel:${contact.phone}`}
+                  className="w-full flex items-center justify-between p-4 bg-zinc-50 rounded-2xl hover:bg-zinc-100 transition-colors group no-underline"
+                >
                   <div className="flex items-center gap-3">
                     <contact.icon className="w-5 h-5 text-zinc-400 group-hover:text-zinc-900" />
                     <div className="text-left">
@@ -645,7 +655,7 @@ const Dashboard = ({ user, stats, onViewAll }: { user: User, stats: any, onViewA
                     </div>
                   </div>
                   <Phone className="w-4 h-4 text-zinc-300 group-hover:text-emerald-500" />
-                </button>
+                </a>
               ))}
             </div>
           </div>
@@ -1135,13 +1145,40 @@ export default function App() {
   };
 
   const acceptIncident = async (id: number) => {
+    if (!['doctor', 'police', 'volunteer'].includes(user?.role || '')) {
+      addToast('Only responders can accept dispatches.', 'error');
+      return;
+    }
     const res = await fetch(`/api/incidents/${id}/accept`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ responderId: user?.id })
     });
     if (res.ok) {
+      addToast('Incident accepted. Proceed to location.', 'success');
       fetchIncidents();
+    }
+  };
+
+  const resolveIncident = async (id: number) => {
+    const incident = incidents.find(i => i.id === id);
+    const isResponder = incident?.responder_id === user?.id;
+    const isReporter = incident?.reporter_id === user?.id;
+    
+    if (!isResponder && !isReporter && user?.role !== 'admin') {
+      addToast('Only the assigned responder or the reporter can resolve this.', 'error');
+      return;
+    }
+
+    const res = await fetch(`/api/incidents/${id}/resolve`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: user?.id })
+    });
+    if (res.ok) {
+      addToast('Incident marked as resolved.', 'success');
+      fetchIncidents();
+      fetchStats();
     }
   };
 
@@ -1158,7 +1195,7 @@ export default function App() {
         role={user.role} 
       />
 
-      <main className="lg:ml-64 pt-32 p-8 lg:p-12 min-h-screen">
+      <main className="lg:ml-64 pt-40 p-8 lg:p-12 min-h-screen">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
@@ -1205,7 +1242,7 @@ export default function App() {
             )}
 
             {activeTab === 'map' && (
-              <div className="h-[calc(100vh-14rem)] flex flex-col">
+              <div className="h-[calc(100vh-16rem)] flex flex-col">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
                   <div>
                     <h2 className="text-3xl font-black tracking-tight text-zinc-900">Crisis Mapper</h2>
@@ -1285,10 +1322,17 @@ export default function App() {
                           >
                             Accept Dispatch
                           </button>
+                        ) : inc.status === 'accepted' ? (
+                          <button 
+                            onClick={() => resolveIncident(inc.id)}
+                            className="flex-1 py-3 bg-blue-500 text-white text-xs font-bold rounded-xl hover:bg-blue-600 transition-all shadow-lg shadow-blue-500/20 active:scale-[0.98]"
+                          >
+                            Mark Resolved
+                          </button>
                         ) : (
                           <div className="flex-1 py-3 bg-emerald-500/10 text-emerald-600 text-xs font-bold rounded-xl flex items-center justify-center gap-2">
                             <CheckCircle2 className="w-4 h-4" />
-                            Accepted
+                            Resolved
                           </div>
                         )}
                         <button 
