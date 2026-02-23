@@ -39,6 +39,9 @@ import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { cn } from './utils';
 
+
+const API = import.meta.env.VITE_API_URL;
+
 // Fix Leaflet icon issue
 // @ts-ignore
 delete L.Icon.Default.prototype._getIconUrl;
