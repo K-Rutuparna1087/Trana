@@ -288,7 +288,7 @@ async function startServer() {
   };
 
   app.post('/api/incidents', (req, res) => {
-    const { type, lat, lng, reporterId, severity , language } = req.body;
+    const { type, lat, lng, reporterId, severity } = req.body;
     const result = db.prepare('INSERT INTO incidents (type, lat, lng, reporter_id, severity) VALUES (?, ?, ?, ?, ?)')
       .run(type, lat, lng, reporterId, severity);
     
@@ -296,7 +296,7 @@ async function startServer() {
     
     broadcastToResponders({
       type: 'new_incident',
-      incident: { id: incidentId, type, lat, lng, severity,language: language || 'en',status: 'triggered', created_at: new Date().toISOString() }
+      incident: { id: incidentId, type, lat, lng, severity, status: 'triggered', created_at: new Date().toISOString() }
     });
     broadcastStats();
 
@@ -404,7 +404,7 @@ async function startServer() {
     app.get('*', (req, res) => res.sendFile(path.resolve('dist/index.html')));
   }
 
-  const PORT = process.env.PORT || 3000;
+  const PORT = 3000;
   server.listen(PORT, '0.0.0.0', () => {
     console.log(`TRANA OS running on http://localhost:${PORT}`);
   });
